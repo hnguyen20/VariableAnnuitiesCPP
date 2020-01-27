@@ -1,0 +1,27 @@
+IR file,1,2,3,4,5,fmv column
+base,0.01,0,0,0,0,1_U
+base,-0.01,0,0,0,0,1_D
+base,0,0.01,0,0,0,2_U
+base,0,-0.01,0,0,0,2_D
+base,0,0,0.01,0,0,3_U
+base,0,0,-0.01,0,0,3_D
+base,0,0,0,0.01,0,4_U
+base,0,0,0,-0.01,0,4_D
+base,0,0,0,0,0.01,5_U
+base,0,0,0,0,-0.01,5_D
+1y_up,0,0,0,0,0,base
+1y_down,0,0,0,0,0,base
+2y_up,0,0,0,0,0,base
+2y_down,0,0,0,0,0,base
+3y_up,0,0,0,0,0,base
+3y_down,0,0,0,0,0,base
+4y_up,0,0,0,0,0,base
+4y_down,0,0,0,0,0,base
+5y_up,0,0,0,0,0,base
+5y_down,0,0,0,0,0,base
+7y_up,0,0,0,0,0,base
+7y_down,0,0,0,0,0,base
+10y_up,0,0,0,0,0,base
+10y_down,0,0,0,0,0,base
+30y_up,0,0,0,0,0,base
+30y_down,0,0,0,0,0,base
