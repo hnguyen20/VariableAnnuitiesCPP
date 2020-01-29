@@ -10,11 +10,28 @@
 #include<string>
 #include "Pricer.h"
 #include "PricerABRP.h"
-#include <any>
+#include "PricerABRU.h"
+#include "PricerABSU.h"
+#include "PricerDBAB.h"
+#include "PricerDBIB.h"
+#include "PricerDBMB.h"
+#include "PricerDBRP.h"
+#include "PricerDBRU.h"
+#include "PricerDBSU.h"
+#include "PricerDBWB.h"
+#include "PricerIBRP.h"
+#include "PricerIBRU.h"
+#include "PricerIBSU.h"
+#include "PricerMBRP.h"
+#include "PricerMBRU.h"
+#include "PricerMBSU.h"
+#include "PricerWBRP.h"
+#include "PricerWBRU.h"
+#include "PricerWBSU.h"
 
 class Pricermain {
 	std::map<std::string, std::map<int, std::vector<std::vector<double>>>> irIndexScenario;
-	std::map<std::string, std::vector<double>> fw;
+	std::map<std::string, std::vector<double>> irFW;
 	std::vector<Policy> inforce;
 	Param param;
 	typedef std::map<std::string, Pricer*> map_type;
@@ -27,7 +44,8 @@ public:
 	void loadInforce(std::string);
 	void loadScenario(std::string);
 	void valuation(std::string);
-	template<typename T> Pricer* createInstance() { return new T();}
+	void valuationScenario(int, std::string);
+	template<typename T> Pricer* createInstance () { return new T(irIndexScenario, irFW);}
 	void testFunction();
 
 

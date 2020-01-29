@@ -2,10 +2,11 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 Param::Param() {
 
-	dt = NUMYEAR / NUMSTEP;
+	dt = 1.0 * NUMYEAR / NUMSTEP;
 
 	cov_return[0][0] = 0.1514;
 	cov_return[1][1] = 0.2052;
@@ -102,18 +103,6 @@ Param::Param() {
 		std::getline(shockname, irname, ':');
 		irShockList.insert(irname);
 	}
-
-
-
-	//ProductType
-	productType = new std::string[2] {"ABRP","DBAB"};
-	/* Uncomment this part for full product type list
-	productType = new std::string[2] {"ABRP","MBRU","MBRP","DBAB","WBRP","WBSU","WBRU","DBRP","MBSU",
-	               "IBRP","DBWB","DBIB","DBRU","DBSU","ABSU","IBRU","DBMB","ABRU",
-	               "IBSU"};
-	*/
-
-
 
 
 }

@@ -29,7 +29,9 @@ public:
 	std::set<std::string> irShockList;
 
 	//ProductType
-	std::string* productType;
+	std::string productType[19] {"ABRP","MBRU","MBRP","DBAB","WBRP","WBSU","WBRU","DBRP","MBSU",
+        "IBRP","DBWB","DBIB","DBRU","DBSU","ABSU","IBRU","DBMB","ABRU",
+        "IBSU"};;
 
 	public:
 		Param();

@@ -21,10 +21,7 @@ Mortality::~Mortality() {
 
 void Mortality::Init(std::string mortfile) {
 		std::ifstream infile(mortfile);
-		std::string line;
-		char comma;
-		double addmort = false;
-
+		std::string line, data;
 
 		while (std::getline(infile, line))
 		{
@@ -33,22 +30,27 @@ void Mortality::Init(std::string mortfile) {
 				line.erase(line.length() - 1);
 			}
 		    std::istringstream iss(line);
-		    int a;
-		    double b;
-		    if (!(iss >> a >> comma >> b)) { break; } // error
-		    // process pair (a,b)
-		    morttable[a] = b;
+
+		    int age;
+		    double mort;
+
+		    std::getline(iss,data, ',');
+		    age = std::stoi(data);
+		    std::getline(iss,data);
+		    mort = std::stod(data);
+
+		    morttable[age] = mort;
 		}
 }
 
 double Mortality::p(double age, double t){
 	int x = (int) floor(age);
 	int x_plus_t = (int) floor(age + t);
-	double pxt = 1;
+	double pxt = 1.0;
 	for (int i = x;  i < x_plus_t ; i++){
 		pxt = pxt * (1 - morttable[i]);
 	}
-	return pxt * (1 - (age + t - x_plus_t) * morttable[x_plus_t])\
+	return pxt * (1 - (age + t - x_plus_t) * morttable[x_plus_t])
 			/(1-(age-x)*morttable[x]);
 }
 

@@ -1,12 +1,17 @@
 
 #include "Pricer.h"
+#include <iomanip>
 
 
 
 
+Pricer::Pricer(std::map<std::string, std::map<int, std::vector<std::vector<double>>>> irIndexScen,
+		std::map<std::string, std::vector<double>> fwRates) {
+	irIndexScenario = irIndexScen;
+	irFW = fwRates;
 
-Pricer::Pricer() {
-	dt = 1.0/12;
+	dt = 1.0 * Param::NUMYEAR/Param::NUMSTEP;
+
 	for (int i = 0; i < Param::NUMSCENARIO; i++){
 		std::vector<double> row;
 		for (int j = 0; j < Param::NUMSTEP; j++){
@@ -25,8 +30,7 @@ Pricer::Pricer() {
 
 }
 
-PolicyResult Pricer::evaluate(Policy policy, Shock &shocktype, std::vector<double> &fw,
-		std::map<int, std::vector<std::vector<double>>> &indexScenario,  Mortality & femalemc,  Mortality &malemc) {
+PolicyResult Pricer::evaluate(Policy policy, Shock shocktype) {
 	/*Evaluate for a policy, given a shock value for each fund, forward curve, mortality,
     equity composition of the funds.
     Shock is a map of fund num : fund shock
@@ -34,8 +38,11 @@ PolicyResult Pricer::evaluate(Policy policy, Shock &shocktype, std::vector<doubl
 
 
 	PolicyResult res;
-	Param param;
     std::vector<double> shock = shocktype.indexshock;
+    std::stringstream ss(shocktype.shockname);
+	std::string ir_shock;
+	std::getline(ss, ir_shock, ':');
+
 	for (int i = 0; i < Param::NUMINDEX; i++) {
 		for (int k = 0; k < param.getNumFund(); k++) {
 			res.av[i] = res.av[i] + policy.fundValue[k] * (1 + shock[i])
@@ -61,15 +68,15 @@ PolicyResult Pricer::evaluate(Policy policy, Shock &shocktype, std::vector<doubl
 
 
 	for (int j = 1; j < Param::NUMSTEP + 1; j++){
-		df[j] = df[j-1] * std::exp(-fw[j-1] * dt);
+		df[j] = df[j-1] * std::exp(-irFW[ir_shock][j-1] * dt);
 
 		if (std::tolower(policy.gender) == 'm'){
-			q[j] = malemc.q(age + (j-1) * dt, dt);
-			s[j] = malemc.p(age, j * dt);
+			q[j] = param.getMaleMC().q(age + (j-1) * dt, dt);
+			s[j] = param.getMaleMC().p(age, j * dt);
 		}
 		else {
-			q[j] = femalemc.q(age + (j-1) * dt, dt);
-			s[j] = femalemc.p(age, j * dt);
+			q[j] = param.getFemaleMC().q(age + (j-1) * dt, dt);
+			s[j] = param.getFemaleMC().p(age, j * dt);
 		}
 	}
 
@@ -77,7 +84,7 @@ PolicyResult Pricer::evaluate(Policy policy, Shock &shocktype, std::vector<doubl
 	for (int sceInd = 0; sceInd < Param::NUMSCENARIO; sceInd++){
 		Policy pol = policy;
 		for (int k = 0; k < param.getNumFund(); k++) {
-			double fundval_k = 0;
+			double fundval_k = 0.0;
 			for (int i = 0; i < Param::NUMINDEX; i++){
 				fundval_k = fundval_k + pol.fundValue[k] * (1 + shock[i])
 						* param.getFundMap()[k][i];
@@ -86,24 +93,22 @@ PolicyResult Pricer::evaluate(Policy policy, Shock &shocktype, std::vector<doubl
 		}
 
 		for ( int timeInd = 0; timeInd < Param::NUMSTEP; timeInd++){
-			project(pol, indexScenario, sceInd, timeInd);
+			project(pol, irIndexScenario[ir_shock], irFW[ir_shock], sceInd, timeInd);
 		}
 	}
 
 
 
-	double pvRC = 0, pvDA = 0, pvLA = 0; //Risk charge, death benefit, living benefit
+	double pvRC = 0.0, pvDA = 0.0, pvLA = 0.0; //Risk charge, death benefit, living benefit
 
 
 	for (int j = 1;  j < Param::NUMSTEP +1; j++){
-		double rc = 0, da = 0, la = 0;
+		double rc = 0.0, da = 0.0, la = 0.0;
 		for (int i = 0; i< Param::NUMSCENARIO; i++) {
 			rc = rc + RC[i][j-1];
 			da = da + DA[i][j-1];
 			la = la + LA[i][j-1];
-			//std::cout<<"Benefit: "<<LA[i][j-1]<< ",i ="<<i<<",j="<<j<<std::endl;
 		}
-
 
 		pvRC = pvRC + rc/Param::NUMSCENARIO * df[j] * s[j];
 		pvDA = pvDA + da/Param::NUMSCENARIO * df[j] * s[j-1] * q[j];
@@ -114,14 +119,14 @@ PolicyResult Pricer::evaluate(Policy policy, Shock &shocktype, std::vector<doubl
 	res.gmdb = pvDA * policy.survivorShip;
 	res.gmlb = pvLA * policy.survivorShip;
 	res.guaranteedbenefit = (pvDA+pvLA) * policy.survivorShip;
+
 	//Fair market value
 	res.fmv = res.guaranteedbenefit - res.riskCharge;
 	return res;
 
 }
 
-PolicyResult Pricer::evaluateScenario(Policy policy, int scenInd, Shock &shocktype, std::vector<double> &fw,
-		std::map<int, std::vector<std::vector<double>>> &indexScenario,  Mortality & femalemc,  Mortality &malemc) {
+PolicyResult Pricer::evaluateScenario(Policy policy, int sceInd, Shock shocktype) {
 	/*Evaluate for a policy, given a shock value for each fund, forward curve, mortality,
     equity composition of the funds.
     Shock is a map of fund num : fund shock
@@ -129,8 +134,11 @@ PolicyResult Pricer::evaluateScenario(Policy policy, int scenInd, Shock &shockty
 
 
 	PolicyResult res;
-	Param param;
     std::vector<double> shock = shocktype.indexshock;
+    std::stringstream ss(shocktype.shockname);
+	std::string ir_shock;
+	std::getline(ss, ir_shock, ':');
+
 	for (int i = 0; i < Param::NUMINDEX; i++) {
 		for (int k = 0; k < param.getNumFund(); k++) {
 			res.av[i] = res.av[i] + policy.fundValue[k] * (1 + shock[i])
@@ -156,53 +164,54 @@ PolicyResult Pricer::evaluateScenario(Policy policy, int scenInd, Shock &shockty
 
 
 	for (int j = 1; j < Param::NUMSTEP + 1; j++){
-		df[j] = df[j-1] * std::exp(-fw[j-1] * dt);
+		df[j] = df[j-1] * std::exp(-irFW[ir_shock][j-1] * dt);
 
 		if (std::tolower(policy.gender) == 'm'){
-			q[j] = malemc.q(age + (j-1) * dt, dt);
-			s[j] = malemc.p(age, j * dt);
+			q[j] = param.getMaleMC().q(age + (j-1) * dt, dt);
+			s[j] = param.getMaleMC().p(age, j * dt);
 		}
 		else {
-			q[j] = femalemc.q(age + (j-1) * dt, dt);
-			s[j] = femalemc.p(age, j * dt);
+			q[j] = param.getFemaleMC().q(age + (j-1) * dt, dt);
+			s[j] = param.getFemaleMC().p(age, j * dt);
 		}
 	}
 
 
-	for (int sceInd = 0; sceInd < Param::NUMSCENARIO; sceInd++){
-		Policy pol = policy;
-		for (int k = 0; k < param.getNumFund(); k++) {
-			double fundval_k = 0;
-			for (int i = 0; i < Param::NUMINDEX; i++){
-				fundval_k = fundval_k + pol.fundValue[k] * (1 + shock[i])
-						* param.getFundMap()[k][i];
-			}
-			pol.fundValue[k] = fundval_k;
+	Policy pol = policy;
+	for (int k = 0; k < param.getNumFund(); k++) {
+		double fundval_k = 0.0;
+		for (int i = 0; i < Param::NUMINDEX; i++){
+			fundval_k = fundval_k + pol.fundValue[k] * (1 + shock[i])
+					* param.getFundMap()[k][i];
 		}
+		pol.fundValue[k] = fundval_k;
+	}
 
-		for ( int timeInd = 0; timeInd < Param::NUMSTEP; timeInd++){
-			project(pol, indexScenario, sceInd, timeInd);
-		}
+	for ( int timeInd = 0; timeInd < Param::NUMSTEP; timeInd++){
+		project(pol, irIndexScenario[ir_shock], irFW[ir_shock], sceInd, timeInd);
 	}
 
 
 
-	double pvRC = 0, pvDA = 0, pvLA = 0; //Risk charge, death benefit, living benefit
+
+	double pvRC = 0.0, pvDA = 0.0, pvLA = 0.0; //Risk charge, death benefit, living benefit
 
 
 	for (int j = 1;  j < Param::NUMSTEP +1; j++){
-		double rc = 0, da = 0, la = 0;
-		for (int i = 0; i< Param::NUMSCENARIO; i++) {
-			rc = rc + RC[i][j-1];
-			da = da + DA[i][j-1];
-			la = la + LA[i][j-1];
-			//std::cout<<"Benefit: "<<LA[i][j-1]<< ",i ="<<i<<",j="<<j<<std::endl;
-		}
+		double rc = 0.0, da = 0.0, la = 0.0;
+
+		rc = rc + RC[sceInd][j-1];
+		da = da + DA[sceInd][j-1];
+		la = la + LA[sceInd][j-1];
 
 
-		pvRC = pvRC + rc/Param::NUMSCENARIO * df[j] * s[j];
-		pvDA = pvDA + da/Param::NUMSCENARIO * df[j] * s[j-1] * q[j];
-		pvLA = pvLA + la/Param::NUMSCENARIO * df[j] * s[j];
+
+		pvRC = pvRC + rc * df[j] * s[j];
+		pvDA = pvDA + da * df[j] * s[j-1] * q[j];
+		pvLA = pvLA + la * df[j] * s[j];
+
+
+
 
 	}
 	res.riskCharge = pvRC * policy.survivorShip;
@@ -229,4 +238,45 @@ double Pricer::getfundScenario(int fundnum,
     return fundreturn;
 }
 
+double Pricer::getAnnuityFactor(Policy policy, int timeInd, std::vector<double> &fw){
+	double aT = 0.0;
+	double age = Date::year_between(policy.currentDate, policy.birthDate);
+	double dP = 1.0;
+	int nY = 0;
+	while(dP > 1e-4) {
+		double dFR = 0.0;
+		if(timeInd + nY * 12 < Param::NUMSTEP) {
+			dFR = fw[timeInd  + nY * 12];
+		}
+		else {
+			dFR = fw[Param::NUMSTEP-1];
+		}
+		if (std::tolower(policy.gender) == 'f') {
+			dP = param.getFemaleMC().p(age, nY);
+		}
+		else {
+			dP = param.getMaleMC().p(age, nY);
+		}
+		aT += dP * std::exp(-dFR * nY);
+		nY += 1;
+	}
+	return aT;
+}
 
+double Pricer::getAnnuityFactor_r(Policy policy, double r) {
+	double aT = 0.0;
+	double age = Date::year_between(policy.currentDate, policy.birthDate);
+	double dP = 1.0;
+	int nY = 0;
+	while(dP > 1e-4) {
+		if (std::tolower(policy.gender) == 'f') {
+			dP = param.getFemaleMC().p(age, nY);
+		}
+		else {
+			dP = param.getMaleMC().p(age, nY);
+		}
+		aT += dP * std::exp(-r * nY);
+		nY += 1;
+	}
+	return aT;
+}

@@ -1,9 +1,3 @@
-/*
- * PricerABRP.cpp
- *
- *  Created on: 24 Jan 2020
- *      Author: hangn
- */
 
 #include "PricerABRP.h"
 
@@ -11,8 +5,9 @@
 
 
 
-inline void PricerABRP::project(Policy& policy,  std::map<int, std::vector<std::vector<double>>> &indexScenario, int sceInd, int timeInd) {
+void PricerABRP::project(Policy& policy,  std::map<int, std::vector<std::vector<double>>> &indexScenario, std::vector<double> &fw, int sceInd, int timeInd) {
 	//time to maturity
+
 
 
 	double T = Date::month_between(policy.matDate, policy.currentDate);
@@ -39,17 +34,7 @@ inline void PricerABRP::project(Policy& policy,  std::map<int, std::vector<std::
 
 		dAV = dAV + policy.fundValue[k];
 		dFee = dFee + dPartialFee;
-		/*
-		if (k == 3){
-			std::cout << "Scenario: "<< sceInd << ", Time: " << timeInd
-				<<", Fund Value: "<< nMonth <<
-				", Partial AV: "<< dPartialAV<< std::endl;
-		}
-		*/
 	}
-
-
-
 
 	// renewal
 	if (T==0){
@@ -60,7 +45,6 @@ inline void PricerABRP::project(Policy& policy,  std::map<int, std::vector<std::
 		policy.matDate = Date::add_months(policy.matDate, m);
 	}
 
-
 	//update the policy information
 	policy.currentDate = Date::add_months(policy.currentDate , 1);
 
@@ -68,6 +52,7 @@ inline void PricerABRP::project(Policy& policy,  std::map<int, std::vector<std::
 	DA[sceInd][timeInd] = 0.0;
 	LA[sceInd][timeInd] = 0.0;
 	RC[sceInd][timeInd] = dFee;
+
 
 
 
@@ -93,8 +78,6 @@ inline void PricerABRP::project(Policy& policy,  std::map<int, std::vector<std::
 	// the maturity date is after the last scenario date
 	if (T > 0 and Param::NUMSTEP -1 == timeInd) {
 		LA[sceInd][timeInd] = std::max(0.0, policy.gbAmt - dAV);
-
-
 	}
 
 

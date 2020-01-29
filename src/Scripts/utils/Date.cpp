@@ -53,13 +53,16 @@ int Date::month_between(std::tm dateto, std::tm datefrom){
 }
 
 double Date::year_between(std::tm dateto, std::tm datefrom){
+	/*
 	std::time_t to = std::mktime(&dateto);
 	std::time_t from = std::mktime(&datefrom);
 	double days_diff;
 	if ( to != (std::time_t)(-1) && from != (std::time_t)(-1) ){
 		days_diff = std::difftime(to, from) / (60 * 60 * 24);
 	}
-	return days_diff/365;
+	return (double) days_diff/365.0;
+	*/
+	return (julianDate(dateto) - julianDate(datefrom))/365.0;
 }
 
 std::tm Date::add_months(std::tm date, int months){
@@ -71,5 +74,30 @@ std::tm Date::add_months(std::tm date, int months){
 	return boost::gregorian::to_tm(*m_itr);
 }
 
+void Date::printDate(std::tm date){
+	std::cout << date.tm_mday << "/" << date.tm_mon << "/" << date.tm_year <<std::endl;
+}
+
+
+double Date::julianDate(std::tm date) {
+	int y, m, d;
+	d = date.tm_mday;
+	m = date.tm_mon;
+	y = date.tm_year;
+	assert(y>=1582);
+	long Y = y;
+	long M = m;
+	if (m <3) {
+		M+=12;
+		Y-=1;
+	}
+	long A = (long) Y/100;
+	long B = (long) A/4;
+	long C = 2-A+B;
+	long E = (long) (365.25*(Y+4716));
+	long F = (long) (30.6001*(M+1));
+	double JD = (double) (C+d+E+F-1524.5);
+	return JD;
+}
 
 

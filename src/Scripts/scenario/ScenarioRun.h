@@ -9,7 +9,7 @@ class ScenarioRun {
 public:
 	ScenarioRun();
 	virtual ~ScenarioRun();
-	void printResult(std::string, std::string);
+	void printResult(std::string, std::string, std::string);
 };
 
 #endif /* SCRIPTS_SCENARIO_SCENARIORUN_H_ */
